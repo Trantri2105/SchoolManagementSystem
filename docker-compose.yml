@@ -1,0 +1,49 @@
+services:
+  server:
+    image: trantri10503/school-management-server:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - school-network
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      DB_NAME: school
+      REDIS_HOST: redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: school
+    networks:
+      - school-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d school" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - school-network
+
+networks:
+  school-network:
+    driver: bridge
+    name: school-network
